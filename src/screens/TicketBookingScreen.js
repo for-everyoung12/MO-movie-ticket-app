@@ -3,24 +3,29 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Button, TouchableOpacity, Alert } from 'react-native';
 
 const TicketBookingScreen = ({ route }) => {
-  const { showtimeId } = route.params;  // Lấy showtimeId từ params
+  const { roomId } = route.params;  // Lấy roomId từ params
   const [seats, setSeats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSeats, setSelectedSeats] = useState([]);  // Lưu ghế đã chọn
 
-  // Gọi API để lấy danh sách ghế
+  // Gọi API để lấy danh sách ghế theo roomId
   useEffect(() => {
     const fetchSeats = async () => {
       try {
-        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/seats/${showtimeId}`);
+        console.log(`Fetching seats for roomId: ${roomId}`); // In roomId để kiểm tra
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/seats/${roomId}`);
         
-        if (response.ok) {
-          const data = await response.json();
-          setSeats(data);  // Lưu danh sách ghế vào state
-        } else {
-          alert('Failed to load seats');
+        // Kiểm tra phản hồi có thành công không
+        if (!response.ok) {
+          throw new Error('Failed to fetch seats');
         }
+
+        const data = await response.json();
+        console.log('Seats data received:', data);  // In dữ liệu ghế nhận được từ API
+
+        setSeats(data);  // Lưu danh sách ghế vào state
       } catch (error) {
+        console.error('Error fetching seats:', error);  // In lỗi nếu có
         alert('An error occurred while fetching seats');
       } finally {
         setLoading(false);  // Hoàn tất việc tải dữ liệu
@@ -28,7 +33,7 @@ const TicketBookingScreen = ({ route }) => {
     };
 
     fetchSeats();
-  }, [showtimeId]);
+  }, [roomId]);
 
   // Hiển thị loading khi đang tải dữ liệu
   if (loading) {
@@ -54,7 +59,6 @@ const TicketBookingScreen = ({ route }) => {
       Alert.alert('No seats selected', 'Please select at least one seat to book.');
     } else {
       Alert.alert('Booking confirmed', `You have booked seats: ${selectedSeats.join(', ')}`);
-      // Thực hiện API gọi để lưu trạng thái đặt vé vào backend nếu cần
     }
   };
 
@@ -73,7 +77,7 @@ const TicketBookingScreen = ({ route }) => {
               item.status === 'booked' && styles.bookedSeat,
               selectedSeats.includes(item._id) && styles.selectedSeat,
             ]}
-            disabled={item.status === 'booked'}  // Không cho chọn ghế đã được đặt
+            disabled={item.status === 'booked'}  
             onPress={() => handleSelectSeat(item._id)}
           >
             <Text style={styles.seatText}>{item.seat_number}</Text>

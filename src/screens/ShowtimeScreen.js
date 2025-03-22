@@ -1,60 +1,73 @@
+// src/screens/ShowtimeScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Button } from 'react-native';
+import { View, Text, FlatList, Button, StyleSheet, ActivityIndicator } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 
-const ShowtimeScreen = ({ route, navigation }) => {
+const ShowtimeScreen = () => {
+  const route = useRoute();
   const { movieId } = route.params;  // Lấy movieId từ params
+  const navigation = useNavigation(); // Để điều hướng
   const [showtimes, setShowtimes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Gọi API để lấy showtimes cho movieId
+  // Lấy showtimes của phim theo movieId
   useEffect(() => {
     const fetchShowtimes = async () => {
       try {
         const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/showtimes/${movieId}`);
         
-        if (response.ok) {
-          const data = await response.json();
-          setShowtimes(data);  // Lưu showtimes vào state
-        } else {
-          alert('Failed to load showtimes');
+        // Kiểm tra phản hồi có thành công không
+        if (!response.ok) {
+          throw new Error('Failed to fetch showtimes');
         }
+
+        const data = await response.json();
+        setShowtimes(data.showtimes);  // Lưu danh sách showtimes vào state từ thuộc tính showtimes
       } catch (error) {
-        alert('An error occurred while fetching showtimes');
+        console.error('Error fetching showtimes:', error);
+        setError('Lỗi khi lấy suất chiếu');
       } finally {
-        setLoading(false);  // Hoàn tất việc tải dữ liệu
+        setLoading(false);
       }
     };
 
     fetchShowtimes();
   }, [movieId]);
 
-  // Hiển thị loading khi đang tải dữ liệu
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#3498db" />
         <Text>Loading showtimes...</Text>
       </View>
     );
   }
 
-  // Chuyển tới màn hình đặt vé khi nhấn vào một showtime
-  const handleBooking = (showtimeId) => {
-    navigation.navigate('TicketBooking', { showtimeId });
-  };
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text>{error}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Showtimes for Movie ID: {movieId}</Text>
-      
-      {/* Hiển thị danh sách showtimes */}
+      <Text style={styles.heading}>Showtimes for Movie {movieId}</Text>
+
       <FlatList
         data={showtimes}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View style={styles.showtimeItem}>
-            <Text style={styles.showtimeText}>Showtime: {item.showtime}</Text>
-            <Button title="Book Ticket" onPress={() => handleBooking(item._id)} />
+            <Text style={styles.showtimeText}>
+              Showtime: {new Date(item.showtime).toLocaleString()}
+            </Text>
+            <Button 
+              title="Book Ticket" 
+              onPress={() => navigation.navigate('TicketBooking', { roomId: item.room_id._id })} // Truyền roomId vào params
+            />
           </View>
         )}
       />
@@ -63,33 +76,10 @@ const ShowtimeScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f8f8f8',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  showtimeItem: {
-    marginBottom: 15,
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 5,
-  },
-  showtimeText: {
-    fontSize: 18,
-    marginBottom: 10,
-  },
+  container: { flex: 1, padding: 20, backgroundColor: '#f6f6f6' },
+  heading: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  showtimeItem: { marginBottom: 15, padding: 10, backgroundColor: '#fff', borderRadius: 5 },
+  showtimeText: { fontSize: 18 },
 });
 
 export default ShowtimeScreen;
-
-
