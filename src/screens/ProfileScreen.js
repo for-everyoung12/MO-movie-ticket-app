@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
 const ProfileScreen = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -71,7 +73,6 @@ const ProfileScreen = () => {
           
           <Text style={styles.text}>Name: {user.name}</Text>
           <Text style={styles.text}>Email: {user.email}</Text>
-          <Button title="Logout" onPress={() => AsyncStorage.removeItem('accessToken')} />
         </>
       ) : (
         <Text>No user data found</Text>
