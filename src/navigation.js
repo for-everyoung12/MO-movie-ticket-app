@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'; // Imp
 import { NavigationContainer } from '@react-navigation/native';  // Đặt NavigationContainer ở ngoài cùng
 import { createStackNavigator } from "@react-navigation/stack"; 
 import { Ionicons } from '@expo/vector-icons'; // Sử dụng Ionicons cho icon
+import { Text } from 'react-native';
 
 import HomeScreen from './screens/HomeScreen'; // Import HomeScreen
 import ProfileScreen from './screens/ProfileScreen'; // Import ProfileScreen
@@ -30,13 +31,20 @@ function AppTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        headerTitle: () => (
+          <Text style={{
+            fontSize: 24,
+            fontWeight: 'bold',
+            color: 'red',
+            textAlign: 'center'
+          }}>
+            FilmGo
+          </Text>
+        ),
         tabBarIcon: ({ size, color }) => {
           let iconName;
-          if (route.name === "Home") {
-            iconName = "home";
-          } else if (route.name === "Profile") {
-            iconName = "person";
-          }
+          if (route.name === "Home") iconName = "home";
+          else if (route.name === "Profile") iconName = "person";
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: "blue",
@@ -46,8 +54,9 @@ function AppTabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
-  );
+  )
 }
+
 
 function MainStack() {
   return (
