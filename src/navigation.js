@@ -11,6 +11,7 @@ import LoginScreen from './screens/LoginScreen'; // Import LoginScreen
 import RegisterScreen from './screens/RegisterScreen'; // Import RegisterScreen
 import ShowtimeScreen from './screens/ShowtimeScreen'; // Import ShowtimeScreen
 import TicketBookingScreen from './screens/TicketBookingScreen'; // Import TicketBookingScreen
+import PaymentScreen from './screens/PaymentScreen';
 
 // Tạo các navigator
 const Tab = createBottomTabNavigator();
@@ -78,9 +79,13 @@ function MainStack() {
       {/* Showtime and TicketBooking screens */}
       <Stack.Screen name="Showtime" component={ShowtimeScreen} />
       <Stack.Screen name="TicketBooking" component={TicketBookingScreen} />
+      
+      {/* Add PaymentScreen here */}
+      <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: false }} /> 
     </Stack.Navigator>
   );
 }
+
 
 export default function Navigation() {
   return (
