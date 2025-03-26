@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Button, StyleSheet, Alert } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 
 const PaymentScreen = () => {
@@ -46,18 +46,7 @@ const PaymentScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Total: ${totalAmount}</Text>
-      
-      <TouchableOpacity 
-        style={[styles.payButton, loading && styles.disabledButton]} 
-        onPress={handlePayment} 
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator size="small" color="#ffffff" />
-        ) : (
-          <Text style={styles.payButtonText}>Pay with PayPal</Text>
-        )}
-      </TouchableOpacity>
+      <Button title="Pay with PayPal" onPress={handlePayment} disabled={loading} />
     </View>
   );
 };
@@ -65,34 +54,6 @@ const PaymentScreen = () => {
 export default PaymentScreen;
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    backgroundColor: '#141414',
-    padding: 20 
-  },
-  title: { 
-    fontSize: 28, 
-    fontWeight: 'bold', 
-    color: 'white',
-    marginBottom: 30,
-  },
-  payButton: {
-    backgroundColor: '#e50914',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-    marginTop: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  payButtonText: { 
-    color: 'white', 
-    fontSize: 18, 
-    fontWeight: 'bold' 
-  },
-  disabledButton: {
-    backgroundColor: '#888',
-  }
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
 });

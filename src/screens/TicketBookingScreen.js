@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { View, Text, StyleSheet, FlatList, Button, TouchableOpacity, Alert } from 'react-native';
+import { useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
 const TicketBookingScreen = () => {
   const navigation = useNavigation();
@@ -8,7 +9,6 @@ const TicketBookingScreen = () => {
   const [seats, setSeats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSeats, setSelectedSeats] = useState([]);
-  const [totalAmount, setTotalAmount] = useState(0);
 
   useEffect(() => {
     const fetchSeats = async () => {
@@ -20,46 +20,75 @@ const TicketBookingScreen = () => {
         const data = await response.json();
         setSeats(data);
       } catch (error) {
+        console.error('Error fetching seats:', error);
         alert('An error occurred while fetching seats');
       } finally {
         setLoading(false);
       }
     };
-
     fetchSeats();
   }, [roomId]);
 
   const handleSelectSeat = (seatNumber) => {
     if (selectedSeats.includes(seatNumber)) {
       setSelectedSeats(selectedSeats.filter((num) => num !== seatNumber));
-      setTotalAmount((prev) => prev - 10);
     } else {
       setSelectedSeats([...selectedSeats, seatNumber]);
-      setTotalAmount((prev) => prev + 10);
     }
   };
 
-  const handleBooking = async () => {
+   const handleBooking = async () => {
     if (selectedSeats.length === 0) {
       Alert.alert('No seats selected', 'Please select at least one seat to book.');
-      return;
-    }
+    } else {
+      const totalAmount = selectedSeats.length * 10;
+      const showtimePrice = 10; // Giá suất chiếu
 
-    try {
-      navigation.navigate('Payment', { totalAmount, userId });
-    } catch (error) {
-      alert('An error occurred while booking.');
+      const ticketDetails = {
+        user_id: userId,
+        movie_id: movieId,
+        showtime_id: showtimeId,
+        seat_numbers: selectedSeats,
+        price: totalAmount,
+        showtime_price: showtimePrice,
+        status: 'pending',
+        payment_status: 'unpaid',
+      };
+
+      try {
+        const ticketResponse = await fetch('https://movie-ticket-backend-k4wm.onrender.com/api/tickets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ticketDetails),
+        });
+
+        const ticketData = await ticketResponse.json();
+        console.log('Ticket creation response:', ticketData); // Log ticket data after creation
+
+        // Chuyển sang màn hình Payment ngay cả khi không có kiểm tra if/else
+        const ticketId = ticketData._id;
+
+        // Chuyển sang màn hình Payment và truyền dữ liệu vé
+        navigation.navigate('Payment', { 
+          ticketId: ticketId, 
+          totalAmount: totalAmount,
+          userId: userId
+        });
+
+      } catch (error) {
+        console.error('Error during booking:', error);
+        alert(`An error occurred: ${error.message}`);
+      }
     }
   };
-
   if (loading) {
     return (
-      <View style={styles.container}><Text style={styles.loadingText}>Loading seats...</Text></View>
+      <View style={styles.container}><Text>Loading seats...</Text></View>
     );
   }
 
   return (
-    <View style={styles.container}>
+<View style={styles.container}>
       
       {/* Màn hình (SCREEN) */}
       <View style={styles.screenContainer}>
@@ -87,7 +116,8 @@ const TicketBookingScreen = () => {
           </TouchableOpacity>
         )}
       />
-      
+       {/* <Button title="Confirm Booking" onPress={handleBooking} />
+       */}
       <TouchableOpacity style={styles.confirmButton} onPress={handleBooking}>
         <Text style={styles.confirmButtonText}>Confirm Booking</Text>
       </TouchableOpacity>
