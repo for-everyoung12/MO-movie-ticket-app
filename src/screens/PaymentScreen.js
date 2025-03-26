@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, Alert, Linking } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 
 const PaymentScreen = () => {
   const route = useRoute();
-  const { ticketId, totalAmount, userId } = route.params;  // Lấy ticketId, totalAmount và userId từ params
-  
-  // Log nhận dữ liệu từ TicketBookingScreen
-  console.log('PaymentScreen received ticketId:', ticketId);
-  console.log('PaymentScreen received totalAmount:', totalAmount);
-  console.log('PaymentScreen received userId:', userId);
+  const navigation = useNavigation();
+  const { ticketId, totalAmount, userId } = route.params;
 
   const [loading, setLoading] = useState(false);
 
@@ -17,32 +13,31 @@ const PaymentScreen = () => {
     setLoading(true);
     const paymentDetails = {
       user_id: userId,
-      ticket_ids: [ticketId],  // Truyền _id của vé vào payment API
+      ticket_ids: [ticketId],
       total_amount: totalAmount,
       payment_method: 'PayPal',
     };
 
-    console.log('Payment details being sent to API:', paymentDetails);
-
     try {
-      const paymentResponse = await fetch('https://movie-ticket-backend-k4wm.onrender.com/api/payments/paypal/create', {
+      const res = await fetch('https://movie-ticket-backend-k4wm.onrender.com/api/payments/paypal/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(paymentDetails),
       });
 
-      const paymentData = await paymentResponse.json();
-      console.log('Payment response:', paymentData);  // Log payment response
+      const data = await res.json();
+      console.log('Payment response:', data);
 
-      if (paymentData.success) {
-        const paymentLink = paymentData.payment.approve_link;
-        Linking.openURL(paymentLink);  // Mở URL thanh toán của PayPal
+      if (data.success && data.payment.approve_link) {
+        navigation.navigate('PayPalWebView', {
+          approveLink: data.payment.approve_link,
+        });
       } else {
-        Alert.alert('Payment failed', paymentData.message || 'Something went wrong with the payment.');
+        Alert.alert('Payment failed', data.message || 'Error!');
       }
-    } catch (error) {
-      console.error('Error during payment process:', error);
-      alert(`An error occurred: ${error.message}`);
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Payment error', err.message);
     } finally {
       setLoading(false);
     }
@@ -50,29 +45,54 @@ const PaymentScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Total Amount: ${totalAmount}</Text>
-      <Button 
-        title="Proceed to PayPal" 
+      <Text style={styles.title}>Total: ${totalAmount}</Text>
+      
+      <TouchableOpacity 
+        style={[styles.payButton, loading && styles.disabledButton]} 
         onPress={handlePayment} 
-        disabled={loading} 
-      />
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color="#ffffff" />
+        ) : (
+          <Text style={styles.payButtonText}>Pay with PayPal</Text>
+        )}
+      </TouchableOpacity>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-});
-
 export default PaymentScreen;
+
+const styles = StyleSheet.create({
+  container: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: '#141414',
+    padding: 20 
+  },
+  title: { 
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    color: 'white',
+    marginBottom: 30,
+  },
+  payButton: {
+    backgroundColor: '#e50914',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    marginTop: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  payButtonText: { 
+    color: 'white', 
+    fontSize: 18, 
+    fontWeight: 'bold' 
+  },
+  disabledButton: {
+    backgroundColor: '#888',
+  }
+});

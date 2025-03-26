@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Button, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, Button, StyleSheet, ActivityIndicator, Alert, TouchableOpacity, Image
+
+ } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -12,6 +14,7 @@ const ShowtimeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userId, setUserId] = useState(null);  // state để lưu userId
+   const [dates, setDates] = useState([]);
 
   // Lấy userId từ AsyncStorage
   useEffect(() => {
@@ -97,36 +100,13 @@ const ShowtimeScreen = () => {
   }
 
   return (
-    // <View style={styles.container}>
-    //   <Text style={styles.heading}>Showtimes for Movie {movieId}</Text>
-
-    //   <FlatList
-    //     data={showtimes}
-    //     keyExtractor={(item) => item._id}
-    //     renderItem={({ item }) => (
-    //       <View style={styles.showtimeItem}>
-    //         <Text style={styles.showtimeText}>
-    //           Showtime: {new Date(item.showtime).toLocaleString()}
-    //         </Text>
-    //         <Button 
-    //           title="Book Ticket" 
-    //           onPress={() => {
-    //             console.log('Navigating with userId:', userId);  // Log userId trước khi điều hướng
-    //             navigation.navigate('TicketBooking', { 
-    //               roomId: item.room_id._id,
-    //               userId: userId, // Truyền userId vào params
-    //               movieId: movieId,
-    //               showtimeId: item._id,
-    //             });
-    //           }}
-    //         />
-    //       </View>
-    //     )}
-    //   />
-    // </View>
+    
     <View style={styles.container}>
       <Text style={styles.heading}>Showtimes for Movie {movies.title}</Text>
-
+      <Image source={{ uri: movies.poster_url }} style={styles.poster} />
+      <Text style={styles.title}>{movies.title}</Text>
+      <Text style={styles.duration}>{movies.duration} minutes</Text>
+    
       <FlatList
         data={showtimes}
         keyExtractor={(item) => item._id}
@@ -156,18 +136,15 @@ const ShowtimeScreen = () => {
   );
 };
 
-// const styles = StyleSheet.create({
-//   container: { flex: 1, padding: 20, backgroundColor: '#f6f6f6' },
-//   heading: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-//   showtimeItem: { marginBottom: 15, padding: 10, backgroundColor: '#fff', borderRadius: 5 },
-//   showtimeText: { fontSize: 18 },
-// });
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'black',
     padding: 15,
   },
+   poster: { width: '100%', height: 500 },
+  title: { color: 'white', fontSize: 24, fontWeight: 'bold', marginTop: 10 },
+  duration: { color: 'gray', marginBottom: 10 },
   heading: {
     color: 'white',
     fontSize: 20,

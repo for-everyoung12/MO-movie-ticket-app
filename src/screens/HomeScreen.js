@@ -25,6 +25,7 @@ const HomeScreen = ({ navigation }) => {
         setLoading(false);
       }
     };
+
     const fetchUserId = async () => {
       const storedUserId = await AsyncStorage.getItem('userId');
       setUserId(storedUserId);
@@ -35,23 +36,20 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   const currentDate = new Date();
-  const twoYearsAgo = new Date();
-  twoYearsAgo.setFullYear(currentDate.getFullYear() - 2);
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setDate(currentDate.getDate() - 30);
 
   const filteredMovies = movies.filter((item) => {
     const releaseDate = new Date(item.release_date);
 
     if (activeTab === 'Playing Now') {
-      // Released between two years ago and today
-      return releaseDate <= currentDate && releaseDate >= twoYearsAgo;
+      return releaseDate <= currentDate && releaseDate >= oneMonthAgo;
     } else if (activeTab === 'Coming Soon') {
-      // Anything outside of the 'Playing Now' range
-      return releaseDate > currentDate || releaseDate < twoYearsAgo;
+      return releaseDate > currentDate || releaseDate < oneMonthAgo;
     }
 
     return false;
   });
-
 
   if (loading) {
     return (
@@ -66,13 +64,40 @@ const HomeScreen = ({ navigation }) => {
     setActiveTab(tabName);
   };
 
-  const handleMoviePress = (movieId) => {
-    navigation.navigate('Showtime', { movieId });
+  const truncateText = (text, maxLength) => {
+    if (text.length > maxLength) {
+      return text.substring(0, maxLength) + '...';
+    }
+    return text;
   };
+const parseGenre = (genre) => {
+  if (Array.isArray(genre)) {
+    const firstElement = genre[0];
+    
+    // Nếu phần tử đầu tiên là một chuỗi JSON (ví dụ: '["Drama", "Romance"]')
+    try {
+      const parsed = JSON.parse(firstElement);
+      if (Array.isArray(parsed)) {
+        return parsed.join(', ');
+      }
+    } catch (error) {
+      // Nếu không phải là JSON hợp lệ, thì in thẳng ra
+      return genre.join(', ');
+    }
+  }
+
+  // Nếu là một chuỗi bình thường
+  if (typeof genre === 'string') {
+    return genre;
+  }
+
+  return 'Unknown';
+};
+
+
 
   return (
     <View style={styles.container}>
-
       {/* Tabs */}
       <View style={styles.tabContainer}>
         <Pressable onPress={() => handleTabPress('Playing Now')}>
@@ -87,38 +112,38 @@ const HomeScreen = ({ navigation }) => {
       <FlatList
         data={filteredMovies}
         keyExtractor={(item) => item._id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.movieCard}
+            style={[styles.movieCardVertical]}
             onPress={() => navigation.navigate('Showtime', { movieId: item._id })}
           >
             <Image source={{ uri: item.poster_url }} style={styles.posterImage} />
-            <Text style={styles.movieTitle}>{item.title}</Text>
-            <Text style={styles.movieDate}>{item.releaseDate}</Text>
+            <View style={styles.movieInfo}>
+              <Text style={styles.movieTitle}>{item.title}</Text>
+              <Text style={styles.movieDate}>{new Date(item.release_date).toLocaleDateString()}</Text>
+
+              {/* Show rating, genre, description for all tabs */}
+              <Text style={styles.movieRating}>Rating: {item.rating || 'N/A'}</Text>
+             <Text style={styles.movieGenre}>
+                Genre: {parseGenre(item.genre)}
+              </Text>
+
+              <Text style={styles.movieDescription}>
+                {truncateText(item.description, 100)}
+              </Text>
+            </View>
           </TouchableOpacity>
         )}
       />
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#141414',
-  },
-  header: {
-    padding: 15,
-    backgroundColor: '#141414',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#444',
-  },
-  headerText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'red',
   },
   tabContainer: {
     flexDirection: 'row',
@@ -137,27 +162,48 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: 'red',
   },
-  movieCard: {
-    marginHorizontal: 10,
-    marginVertical: 20,
-    alignItems: 'center',
+  movieCardVertical: {
+    flexDirection: 'row',
+    backgroundColor: '#1a1a1a',
+    padding: 10,
+    borderRadius: 10,
+    marginHorizontal: 20,
+    marginVertical: 10,
   },
   posterImage: {
-    width: 120,
-    height: 180,
+    width: 100,
+    height: 150,
     borderRadius: 10,
   },
+  movieInfo: {
+    marginLeft: 10,
+    justifyContent: 'center',
+    flex: 1,
+  },
   movieTitle: {
-    marginTop: 5,
     color: 'white',
     fontWeight: 'bold',
-    textAlign: 'center',
-    width: 120,  // Đặt cùng kích thước với posterImage
-    flexWrap: 'wrap',  // Cho phép tự động xuống dòng khi tên phim quá dài
+    fontSize: 16,
+    marginBottom: 5,
   },
   movieDate: {
     color: '#888',
     fontSize: 12,
+    marginBottom: 5,
+  },
+  movieRating: {
+    color: '#FFD700',
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  movieGenre: {
+    color: 'lightblue',
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  movieDescription: {
+    color: 'gray',
+    fontSize: 13,
   },
   loadingContainer: {
     flex: 1,
@@ -165,91 +211,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//       backgroundColor: '#f8f8f8',
-//     },
-//     header: {
-//       padding: 10,
-//       backgroundColor: 'white',
-//       alignItems: 'center',
-//       borderBottomWidth: 1,
-//       borderBottomColor: '#ddd',
-//     },
-//     headerText: {
-//       fontSize: 24,
-//       fontWeight: 'bold',
-//       color: 'red',
-//     },
-//     tabContainer: {
-//       flexDirection: 'row',
-//       justifyContent: 'center',
-//       paddingVertical: 10,
-//       backgroundColor: 'white',
-//       borderBottomWidth: 1,
-//       borderBottomColor: '#ddd',
-//     },
-//     tabText: {
-//       fontSize: 16,
-//       color: 'gray',
-//       marginHorizontal: 20,
-//     },
-//     activeTab: {
-//       color: 'blue',
-//       borderBottomWidth: 2,
-//       borderBottomColor: 'blue',
-//     },
-//     movieItem: {
-//       flexDirection: 'row',
-//       margin: 10,
-//       backgroundColor: '#fff',
-//       borderRadius: 10,
-//       shadowColor: '#000',
-//       shadowOpacity: 0.1,
-//       shadowRadius: 10,
-//       shadowOffset: { width: 0, height: 5 },
-//       elevation: 5,
-//       overflow: 'hidden',
-//     },
-//     moviePoster: {
-//       width: 100,
-//       height: 150,
-//       borderTopLeftRadius: 10,
-//       borderBottomLeftRadius: 10,
-//     },
-//     movieDetails: {
-//       padding: 10,
-//       flex: 1,
-//       justifyContent: 'space-between',
-//     },
-//     movieTitle: {
-//       fontSize: 18,
-//       fontWeight: 'bold',
-//     },
-//     movieDescription: {
-//       fontSize: 12,
-//       color: '#555',
-//       marginVertical: 5,
-//     },
-//     movieGenre: {
-//       fontSize: 14,
-//       color: '#666',
-//       marginBottom: 5,
-//     },
-//     movieRating: {
-//       fontSize: 14,
-//       fontWeight: '600',
-//     },
-//     movieAgeRating: {
-//       fontSize: 14,
-//       fontWeight: '600',
-//     },
-//     loadingContainer: {
-//       flex: 1,
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//     },
-//   });
 
 export default HomeScreen;
