@@ -118,10 +118,16 @@ const ShowtimeScreen = () => {
             <TouchableOpacity
               style={styles.bookButton}
               onPress={() => {
-                console.log('Navigating with userId:', userId);
+                console.log('===============================');
+                console.log('Selected Movie ID:', movieId);
+                console.log('Selected User ID:', userId);
+                console.log('Selected Showtime ID:', item._id);
+                console.log('Selected Room ID:', item.room_id._id);
+                console.log('===============================');
+      
                 navigation.navigate('TicketBooking', {
                   roomId: item.room_id._id,
-                  userId: userId,
+                  userId: userId, 
                   movieId: movieId,
                   showtimeId: item._id,
                 });
