@@ -1,15 +1,35 @@
-// src/screens/ShowtimeScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Button, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Button, StyleSheet, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ShowtimeScreen = () => {
   const route = useRoute();
+  const [movies, setMovies] = useState();
   const { movieId } = route.params;  // Lấy movieId từ params
   const navigation = useNavigation(); // Để điều hướng
   const [showtimes, setShowtimes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userId, setUserId] = useState(null);  // state để lưu userId
+
+  // Lấy userId từ AsyncStorage
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (storedUserId) {
+          setUserId(storedUserId);  // Lưu userId vào state
+        } else {
+          console.log('UserId not found in AsyncStorage');
+        }
+      } catch (error) {
+        console.error('Error fetching userId from AsyncStorage:', error);
+      }
+    };
+
+    fetchUserId();
+  }, []);
 
   // Lấy showtimes của phim theo movieId
   useEffect(() => {
@@ -21,7 +41,7 @@ const ShowtimeScreen = () => {
         if (!response.ok) {
           throw new Error('Failed to fetch showtimes');
         }
-
+        console.log('>>>>>>>>>>>>', response.data);
         const data = await response.json();
         setShowtimes(data.showtimes);  // Lưu danh sách showtimes vào state từ thuộc tính showtimes
       } catch (error) {
@@ -31,7 +51,23 @@ const ShowtimeScreen = () => {
         setLoading(false);
       }
     };
-
+    const fetchMovies = async () => {
+      try {
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/movies/${movieId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setMovies(data);
+          console.log('>>>>>>>>>>>>data', data);
+        } else {
+          alert('Failed to load movies');
+        }
+      } catch (error) {
+        alert('An error occurred while fetching movies');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMovies();
     fetchShowtimes();
   }, [movieId]);
 
@@ -52,9 +88,44 @@ const ShowtimeScreen = () => {
     );
   }
 
+  if (!userId) {
+    return (
+      <View style={styles.container}>
+        <Text>User not logged in. Please log in first.</Text>
+      </View>
+    );
+  }
+
   return (
+    // <View style={styles.container}>
+    //   <Text style={styles.heading}>Showtimes for Movie {movieId}</Text>
+
+    //   <FlatList
+    //     data={showtimes}
+    //     keyExtractor={(item) => item._id}
+    //     renderItem={({ item }) => (
+    //       <View style={styles.showtimeItem}>
+    //         <Text style={styles.showtimeText}>
+    //           Showtime: {new Date(item.showtime).toLocaleString()}
+    //         </Text>
+    //         <Button 
+    //           title="Book Ticket" 
+    //           onPress={() => {
+    //             console.log('Navigating with userId:', userId);  // Log userId trước khi điều hướng
+    //             navigation.navigate('TicketBooking', { 
+    //               roomId: item.room_id._id,
+    //               userId: userId, // Truyền userId vào params
+    //               movieId: movieId,
+    //               showtimeId: item._id,
+    //             });
+    //           }}
+    //         />
+    //       </View>
+    //     )}
+    //   />
+    // </View>
     <View style={styles.container}>
-      <Text style={styles.heading}>Showtimes for Movie {movieId}</Text>
+      <Text style={styles.heading}>Showtimes for Movie {movies.title}</Text>
 
       <FlatList
         data={showtimes}
@@ -62,12 +133,22 @@ const ShowtimeScreen = () => {
         renderItem={({ item }) => (
           <View style={styles.showtimeItem}>
             <Text style={styles.showtimeText}>
-              Showtime: {new Date(item.showtime).toLocaleString()}
+              Showtime: {new Date(item.showtime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
-            <Button 
-              title="Book Ticket" 
-              onPress={() => navigation.navigate('TicketBooking', { roomId: item.room_id._id })} // Truyền roomId vào params
-            />
+            <TouchableOpacity
+              style={styles.bookButton}
+              onPress={() => {
+                console.log('Navigating with userId:', userId);
+                navigation.navigate('TicketBooking', {
+                  roomId: item.room_id._id,
+                  userId: userId,
+                  movieId: movieId,
+                  showtimeId: item._id,
+                });
+              }}
+            >
+              <Text style={styles.bookButtonText}>Book Ticket</Text>
+            </TouchableOpacity>
           </View>
         )}
       />
@@ -75,11 +156,53 @@ const ShowtimeScreen = () => {
   );
 };
 
+// const styles = StyleSheet.create({
+//   container: { flex: 1, padding: 20, backgroundColor: '#f6f6f6' },
+//   heading: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+//   showtimeItem: { marginBottom: 15, padding: 10, backgroundColor: '#fff', borderRadius: 5 },
+//   showtimeText: { fontSize: 18 },
+// });
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#f6f6f6' },
-  heading: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  showtimeItem: { marginBottom: 15, padding: 10, backgroundColor: '#fff', borderRadius: 5 },
-  showtimeText: { fontSize: 18 },
+  container: {
+    flex: 1,
+    backgroundColor: 'black',
+    padding: 15,
+  },
+  heading: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  showtimeItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+    padding: 15,
+    marginBottom: 10,
+    borderRadius: 8,
+  },
+  showtimeText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  bookButton: {
+    backgroundColor: 'red',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+  },
+  bookButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default ShowtimeScreen;
