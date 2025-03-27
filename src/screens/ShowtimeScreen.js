@@ -108,36 +108,42 @@ const ShowtimeScreen = () => {
       <Text style={styles.duration}>{movies.duration} minutes</Text>
     
       <FlatList
-        data={showtimes}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <View style={styles.showtimeItem}>
-            <Text style={styles.showtimeText}>
-              Showtime: {new Date(item.showtime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-            <TouchableOpacity
-              style={styles.bookButton}
-              onPress={() => {
-                console.log('===============================');
-                console.log('Selected Movie ID:', movieId);
-                console.log('Selected User ID:', userId);
-                console.log('Selected Showtime ID:', item._id);
-                console.log('Selected Room ID:', item.room_id._id);
-                console.log('===============================');
-      
-                navigation.navigate('TicketBooking', {
-                  roomId: item.room_id._id,
-                  userId: userId, 
-                  movieId: movieId,
-                  showtimeId: item._id,
-                });
-              }}
-            >
-              <Text style={styles.bookButtonText}>Book Ticket</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      />
+  data={showtimes}
+  keyExtractor={(item) => item._id}
+  renderItem={({ item }) => {
+    const showtimeDate = new Date(item.showtime); // Chuyển đổi thời gian suất chiếu thành đối tượng Date
+    const showtimeDateString = showtimeDate.toLocaleDateString([], { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const showtimeTimeString = showtimeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    return (
+      <View style={styles.showtimeItem}>
+        <Text style={styles.showtimeText}>
+          Date: {showtimeDateString} - Showtime: {showtimeTimeString}
+        </Text>
+        <TouchableOpacity
+          style={styles.bookButton}
+          onPress={() => {
+            console.log('===============================');
+            console.log('Selected Movie ID:', movieId);
+            console.log('Selected User ID:', userId);
+            console.log('Selected Showtime ID:', item._id);
+            console.log('Selected Room ID:', item.room_id._id);
+            console.log('===============================');
+
+            navigation.navigate('TicketBooking', {
+              roomId: item.room_id._id,
+              userId: userId,
+              movieId: movieId,
+              showtimeId: item._id,
+            });
+          }}
+        >
+          <Text style={styles.bookButtonText}>Book Ticket</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }}
+/>
     </View>
   );
 };
